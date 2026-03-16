@@ -6,7 +6,6 @@
 
 import json
 import random
-import argparse
 import os
 
 # 金钱起卦法 (三钱法)
@@ -39,11 +38,6 @@ def get_yao_info(score):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="易经金钱起卦法")
-    parser.add_argument("--json", action="store_true", help="以JSON格式输出结果")
-    parser.add_argument("--info", type=int, help="显示指定卦象的详细信息（1-64）")
-    args = parser.parse_args()
-
     # 加载校对好的 64 卦数据
     script_dir = os.path.dirname(os.path.abspath(__file__))
     json_path = os.path.join(script_dir, "64_hexagrams.json")
@@ -53,37 +47,6 @@ def main():
             gua_data = json.load(f)
     except FileNotFoundError:
         print(f"错误：未找到 {json_path} 文件，请确保文件存在。")
-        return
-
-    if args.info:
-        # 显示指定卦象的详细信息
-        target_gua = next((g for g in gua_data if g["id"] == args.info), None)
-        if not target_gua:
-            print(f"错误：未找到第 {args.info} 卦")
-            return
-
-        print("\n" + "=" * 40)
-        print(
-            f"【{target_gua['id']}卦】：{target_gua['symbol']} {target_gua['name']} ({target_gua['pinyin']})"
-        )
-        print(f"【五行】：{target_gua['element']}")
-        print(f"【卦辞】：{target_gua['gua_ci']}")
-        print(f"【彖传】：{target_gua['tuan_ci']}")
-        print(f"【象传】：{target_gua['da_xiang']}")
-        print(f"【现代解读】：{target_gua['modern_summary']['theme']}")
-        print(f"【建议】：{target_gua['modern_summary']['advice']}")
-        print("=" * 40)
-
-        print("\n【爻辞】：")
-        for line in target_gua["lines"]:
-            print(f"  {line['position']}：{line['yao_ci']}")
-            print(f"    象曰：{line['xiao_xiang']}")
-
-        if "special" in target_gua:
-            print(
-                f"  {target_gua['special']['name']}：{target_gua['special']['yao_ci']}"
-            )
-            print(f"    象曰：{target_gua['special']['xiao_xiang']}")
         return
 
     print("--- 易经金钱起卦法 (三钱法) ---")
@@ -113,13 +76,30 @@ def main():
         print(f"\n抱歉，未能匹配到卦象 (ID: {binary_id})，请检查数据。")
         return
 
-    if args.json:
-        # JSON输出模式
-        # 计算变卦
+    print("\n" + "=" * 40)
+    print(
+        f"【本卦】：{target_gua['symbol']} {target_gua['name']} ({target_gua['pinyin']})"
+    )
+    print(f"【五行】：{target_gua['element']}")
+    print(f"【卦辞】：{target_gua['gua_ci']}")
+    print(f"【大象】：{target_gua['da_xiang']}")
+    print(f"【现代解读】：{target_gua['modern_summary']['theme']}")
+    print(f"【建议】：{target_gua['modern_summary']['advice']}")
+    print("=" * 40)
+
+    # 输出变爻爻辞
+    if moving_indices:
+        print("\n【变爻解析】：")
+        for idx in moving_indices:
+            line = target_gua["lines"][idx]
+            print(f"--- {line['position']} ---")
+            print(f"爻辞：{line['yao_ci']}")
+            print(f"象曰：{line['xiao_xiang']}")
+
+        # 计算并显示变卦
         related_binary = ""
         for i in range(6):
             if i in moving_indices:
-                # 变爻：老阳变少阴(0)，老阴变少阳(1)
                 if binary_id[i] == "1":
                     related_binary += "0"
                 else:
@@ -130,93 +110,15 @@ def main():
         related_gua = next(
             (g for g in gua_data if g["binary_id"] == related_binary), None
         )
-
-        result = {
-            "method": "coin",
-            "main_hexagram": {
-                "id": target_gua["id"],
-                "name": target_gua["name"],
-                "symbol": target_gua["symbol"],
-                "pinyin": target_gua["pinyin"],
-                "element": target_gua["element"],
-                "gua_ci": target_gua["gua_ci"],
-                "da_xiang": target_gua["da_xiang"],
-                "modern_summary": target_gua["modern_summary"],
-                "lines": [
-                    {
-                        "position": target_gua["lines"][i]["position"],
-                        "symbol": "⚊" if binary_id[i] == "1" else "⚋",
-                        "yao_ci": target_gua["lines"][i]["yao_ci"],
-                        "xiao_xiang": target_gua["lines"][i]["xiao_xiang"],
-                        "changing": i in moving_indices,
-                    }
-                    for i in range(6)
-                ],
-            },
-            "changing_lines": [
-                {
-                    "position": target_gua["lines"][i]["position"],
-                    "yao_ci": target_gua["lines"][i]["yao_ci"],
-                }
-                for i in moving_indices
-            ],
-            "related_hexagram": {
-                "id": related_gua["id"] if related_gua else None,
-                "name": related_gua["name"] if related_gua else "未知",
-                "symbol": related_gua["symbol"] if related_gua else "",
-                "pinyin": related_gua["pinyin"] if related_gua else "",
-                "gua_ci": related_gua["gua_ci"] if related_gua else "",
-            }
-            if related_gua
-            else None,
-        }
-
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        # 文本输出模式
-        print("\n" + "=" * 40)
-        print(
-            f"【本卦】：{target_gua['symbol']} {target_gua['name']} ({target_gua['pinyin']})"
-        )
-        print(f"【五行】：{target_gua['element']}")
-        print(f"【卦辞】：{target_gua['gua_ci']}")
-        print(f"【大象】：{target_gua['da_xiang']}")
-        print(f"【现代解读】：{target_gua['modern_summary']['theme']}")
-        print(f"【建议】：{target_gua['modern_summary']['advice']}")
-        print("=" * 40)
-
-        # 输出变爻爻辞
-        if moving_indices:
-            print("\n【变爻解析】：")
-            for idx in moving_indices:
-                line = target_gua["lines"][idx]
-                print(f"--- {line['position']} ---")
-                print(f"爻辞：{line['yao_ci']}")
-                print(f"象曰：{line['xiao_xiang']}")
-
-            # 计算并显示变卦
-            related_binary = ""
-            for i in range(6):
-                if i in moving_indices:
-                    if binary_id[i] == "1":
-                        related_binary += "0"
-                    else:
-                        related_binary += "1"
-                else:
-                    related_binary += binary_id[i]
-
-            related_gua = next(
-                (g for g in gua_data if g["binary_id"] == related_binary), None
+        if related_gua:
+            print(
+                f"\n【变卦】：{related_gua['symbol']} {related_gua['name']} ({related_gua['pinyin']})"
             )
-            if related_gua:
-                print(
-                    f"\n【变卦】：{related_gua['symbol']} {related_gua['name']} ({related_gua['pinyin']})"
-                )
-                print(f"【卦辞】：{related_gua['gua_ci']}")
-        else:
-            print("\n【解析】：此卦无变爻，请以本卦卦辞为准。")
+            print(f"【卦辞】：{related_gua['gua_ci']}")
+    else:
+        print("\n【解析】：此卦无变爻，请以本卦卦辞为准。")
 
-        print("\n提示：占卜结果仅供参考，请理性对待。")
+    print("\n提示：占卜结果仅供参考，请理性对待。")
 
 
 if __name__ == "__main__":
