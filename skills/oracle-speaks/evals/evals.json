@@ -1,0 +1,23 @@
+{
+  "skill_name": "oracle-speaks",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm thinking about changing jobs, give me an I Ching reading",
+      "expected_output": "I Ching hexagram with interpretation and guidance about career change",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "What does the universe want me to know right now?",
+      "expected_output": "Divination reading (any method) with spiritual guidance",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Draw 3 Tarot cards for my love life",
+      "expected_output": "Three-card Tarot spread with interpretation",
+      "files": []
+    }
+  ]
+}
